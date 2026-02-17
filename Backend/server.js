@@ -7,6 +7,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const path = require("path");
 const compression = require("compression");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./swagger.json");
 
 const app = express();
 
@@ -18,6 +20,7 @@ app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
 app.use(compression());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 function mountRoute(routePath, routeModule, name) {
   if (!routeModule) {

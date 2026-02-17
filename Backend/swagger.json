@@ -1,0 +1,77 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Zhantis API",
+    "version": "1.0.0",
+    "description": "Документация для Zhantis Universally Project"
+  },
+  "servers": [
+    { "url": "http://localhost:5000/api" }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Регистрация пользователя",
+        "responses": { "201": { "description": "Пользователь зарегистрирован" } }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Логин пользователя",
+        "responses": { "200": { "description": "JWT токен" } }
+      }
+    },
+    "/auth/me": {
+      "get": {
+        "summary": "Профиль текущего пользователя",
+        "responses": { "200": { "description": "Информация о пользователе" } }
+      }
+    },
+    "/groups": {
+      "get": { "summary": "Список групп" },
+      "post": { "summary": "Создание группы" }
+    },
+    "/groups/{id}": {
+      "put": { "summary": "Обновление группы" },
+      "delete": { "summary": "Удаление группы" }
+    },
+    "/attributes": {
+      "get": { "summary": "Список атрибутов" },
+      "post": { "summary": "Создание атрибута" }
+    },
+    "/attributes/{id}": {
+      "put": { "summary": "Обновление атрибута" },
+      "delete": { "summary": "Удаление атрибута" }
+    },
+    "/attribute-definitions": {
+      "get": { "summary": "Получение определений атрибутов" }
+    },
+    "/orders": {
+      "get": { "summary": "Список заказов" },
+      "post": { "summary": "Создание заказа" }
+    },
+    "/orders/{id}": {
+      "put": { "summary": "Обновление заказа" },
+      "delete": { "summary": "Удаление заказа" }
+    },
+    "/customer": {
+      "get": { "summary": "Получение данных клиента" },
+      "post": { "summary": "Создание/обновление данных клиента" }
+    },
+    "/upload": {
+      "post": { "summary": "Загрузка файла" }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    { "bearerAuth": [] }
+  ]
+}
