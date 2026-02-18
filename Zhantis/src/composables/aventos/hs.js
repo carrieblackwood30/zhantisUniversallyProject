@@ -39,7 +39,7 @@ export function calculateHS(params) {
 
     const recommendation = mechanismCount === 1
       ? `Достаточно одного комплекта HS (${chosen.article}).`
-      : `Для PF = ${pf.toFixed(2)} рекомендуется установить ${mechanismCount} комплекта(ов) HS (${chosen.article}).`;
+      : `Для PF = ${pf.toFixed(2)} рекомендуется установить ${mechanismCount + 1} комплекта(ов) HS (${chosen.article}).`;
 
     return {
       typeKey: "HS_top",

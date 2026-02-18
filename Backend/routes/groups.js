@@ -1,53 +1,93 @@
+// routes/groups.js
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const Group = require("../models/Group");
-const validateObjectId = require("../utils/validateObjectId");
-const asyncHandler = require("../utils/asyncHandler");
-const { success, error } = require("../utils/responseHelper");
 
-// GET /api/groups
-router.get("/", asyncHandler(async (req, res) => {
-  const groups = await Group.find().lean();
-  return success(res, groups);
-}));
+// Получить все группы (lean + проекция)
+router.get("/", async (req, res) => {
+  try {
+    // можно добавить ?fields=name,_id чтобы отдавать только нужные поля
+    const groups = await Group.find().select("_id name slug").lean().exec();
+    res.json(groups);
+  } catch (err) {
+    console.error("GET /api/groups error", err);
+    res.status(500).json({ error: "Ошибка загрузки групп" });
+  }
+});
 
-// POST /api/groups
-router.post("/", asyncHandler(async (req, res) => {
-  const { name, slug } = req.body;
-  if (!name) return error(res, "name is required");
+// Добавить группу
+router.post("/", async (req, res) => {
+  try {
+    const { name, slug } = req.body;
+    if (!name) return res.status(400).json({ error: "name required" });
 
-  const doc = { name };
-  if (slug) doc.slug = slug.trim();
+    const group = new Group({ name, slug });
+    await group.save();
+    res.status(201).json(group);
+  } catch (err) {
+    console.error("POST /api/groups error", err);
+    res.status(500).json({ error: "Ошибка добавления группы" });
+  }
+});
 
-  const group = await Group.create(doc);
-  return success(res, group, 201);
-}));
+router.put("/:id", async (req, res) => {
+  try {
+    const { name, slug } = req.body;
+    const group = await Group.findByIdAndUpdate(
+      req.params.id,
+      { name, slug },
+      { new: true }
+    ).lean().exec();
+    if (!group) return res.status(404).json({ error: "Группа не найдена" });
+    res.json(group);
+  } catch (err) {
+    console.error("PUT /api/groups/:id error", err);
+    res.status(500).json({ error: "Ошибка обновления группы" });
+  }
+});
 
-// PUT /api/groups/:id
-router.put("/:id", asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  if (!validateObjectId(id)) return error(res, "Invalid group id");
+router.delete("/:id", async (req, res) => {
+  try {
+    const group = await Group.findByIdAndDelete(req.params.id).lean().exec();
+    if (!group) return res.status(404).json({ error: "Группа не найдена" });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("DELETE /api/groups/:id error", err);
+    res.status(500).json({ error: "Ошибка удаления группы" });
+  }
+});
 
-  const { name, slug } = req.body;
-  const update = {};
-  if (name !== undefined) update.name = name;
-  if (slug !== undefined) update.slug = slug ? slug.trim() : null;
+// Bulk update/create groups — быстрее для массовых изменений
+router.put("/bulk", async (req, res) => {
+  const items = Array.isArray(req.body.groups) ? req.body.groups : [];
+  if (!items.length) return res.json({ ok: true, result: "no items" });
 
-  const updated = await Group.findByIdAndUpdate(id, update, { new: true }).lean();
-  if (!updated) return error(res, "Group not found", 404);
+  const ops = items.map(g => {
+    if (g._id) {
+      return {
+        updateOne: {
+          filter: { _id: mongoose.Types.ObjectId(g._id) },
+          update: { $set: { name: g.name, slug: g.slug } },
+          upsert: false
+        }
+      };
+    } else {
+      return {
+        insertOne: {
+          document: { name: g.name, slug: g.slug }
+        }
+      };
+    }
+  });
 
-  return success(res, updated);
-}));
-
-// DELETE /api/groups/:id
-router.delete("/:id", asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  if (!validateObjectId(id)) return error(res, "Invalid group id");
-
-  const removed = await Group.findByIdAndDelete(id).lean();
-  if (!removed) return error(res, "Group not found", 404);
-
-  return success(res, { ok: true });
-}));
+  try {
+    const result = await Group.bulkWrite(ops, { ordered: false });
+    res.json({ ok: true, result });
+  } catch (err) {
+    console.error("PUT /api/groups/bulk error", err);
+    res.status(500).json({ error: "Ошибка bulk сохранения групп" });
+  }
+});
 
 module.exports = router;

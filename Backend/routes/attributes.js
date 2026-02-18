@@ -1,97 +1,63 @@
+// routes/attributes.js
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const AttributeDefinition = require("../models/AttributeDefinition");
-const Group = require("../models/Group");
-const Subgroup = require("../models/Subgroup");
-const validateObjectId = require("../utils/validateObjectId");
-const asyncHandler = require("../utils/asyncHandler");
-const { success, error } = require("../utils/responseHelper");
 
-// GET /api/attributes
-router.get("/", asyncHandler(async (req, res) => {
-  const { group, subgroup, global } = req.query;
-  let attrs = [];
-
-  if (subgroup && validateObjectId(subgroup)) {
-    attrs = await AttributeDefinition.find({ subgroup }).lean();
+// GET /api/attributes?group=&subgroup=&global=true
+router.get("/", async (req, res) => {
+  try {
+    const { group, subgroup, global } = req.query;
+    const filter = {};
+    if (group) filter.group = group;
+    if (subgroup) filter.subgroup = subgroup;
+    if (global === "true") { filter.group = null; filter.subgroup = null; }
+    const attrs = await AttributeDefinition.find(filter).lean().exec();
+    res.json(attrs);
+  } catch (err) {
+    console.error("GET /api/attributes error:", err.stack || err);
+    res.status(500).json({ error: "Ошибка загрузки атрибутов" });
   }
-
-  if (group && validateObjectId(group)) {
-    const groupAttrs = await AttributeDefinition.find({ group }).lean();
-    const existingKeys = new Set(attrs.map(a => a.key));
-    for (const a of groupAttrs) if (!existingKeys.has(a.key)) attrs.push(a);
-  }
-
-  if (global) {
-    const globalAttrs = await AttributeDefinition.find({ group: null, subgroup: null }).lean();
-    const existingKeys = new Set(attrs.map(a => a.key));
-    for (const a of globalAttrs) if (!existingKeys.has(a.key)) attrs.push(a);
-  }
-
-  attrs.sort((a, b) => (a.order || 0) - (b.order || 0));
-  return success(res, attrs);
-}));
+});
 
 // POST /api/attributes
-router.post("/", asyncHandler(async (req, res) => {
-  const { key, label, group, subgroup, global } = req.body;
-  if (!key) return error(res, "key is required");
-  if (!label) return error(res, "label is required");
-
-  const doc = { key, label, global: !!global };
-
-  if (group && validateObjectId(group)) {
-    const grp = await Group.findById(group).lean();
-    if (!grp) return error(res, "Group not found");
-    doc.group = group;
+router.post("/", async (req, res) => {
+  try {
+    const body = req.body;
+    const a = new AttributeDefinition(body);
+    await a.save();
+    res.status(201).json(a);
+  } catch (err) {
+    console.error("POST /api/attributes error:", err.stack || err);
+    res.status(500).json({ error: "Ошибка создания атрибута" });
   }
-
-  if (subgroup && validateObjectId(subgroup)) {
-    const sub = await Subgroup.findById(subgroup).lean();
-    if (!sub) return error(res, "Subgroup not found");
-    doc.subgroup = subgroup;
-  }
-
-  const attribute = await AttributeDefinition.create(doc);
-  return success(res, attribute, 201);
-}));
+});
 
 // PUT /api/attributes/:id
-router.put("/:id", asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  if (!validateObjectId(id)) return error(res, "Invalid attribute id");
-
-  const { key, label, group, subgroup, global } = req.body;
-  const update = {};
-  if (key !== undefined) update.key = key;
-  if (label !== undefined) update.label = label;
-  if (global !== undefined) update.global = !!global;
-
-  if (group !== undefined) {
-    if (group && !validateObjectId(group)) return error(res, "Invalid group id");
-    update.group = group || null;
+router.put("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid id" });
+    const updated = await AttributeDefinition.findByIdAndUpdate(id, req.body, { new: true }).lean().exec();
+    if (!updated) return res.status(404).json({ error: "Attribute not found" });
+    res.json(updated);
+  } catch (err) {
+    console.error("PUT /api/attributes/:id error:", err.stack || err);
+    res.status(500).json({ error: "Ошибка обновления атрибута" });
   }
-
-  if (subgroup !== undefined) {
-    if (subgroup && !validateObjectId(subgroup)) return error(res, "Invalid subgroup id");
-    update.subgroup = subgroup || null;
-  }
-
-  const updated = await AttributeDefinition.findByIdAndUpdate(id, update, { new: true }).lean();
-  if (!updated) return error(res, "Attribute not found", 404);
-
-  return success(res, updated);
-}));
+});
 
 // DELETE /api/attributes/:id
-router.delete("/:id", asyncHandler(async (req, res) => {
-  const { id } = req.params;
-  if (!validateObjectId(id)) return error(res, "Invalid attribute id");
-
-  const removed = await AttributeDefinition.findByIdAndDelete(id).lean();
-  if (!removed) return error(res, "Attribute not found", 404);
-
-  return success(res, { ok: true });
-}));
+router.delete("/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) return res.status(400).json({ error: "Invalid id" });
+    await AttributeDefinition.findByIdAndDelete(id);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE /api/attributes/:id error:", err.stack || err);
+    res.status(500).json({ error: "Ошибка удаления атрибута" });
+  }
+});
 
 module.exports = router;

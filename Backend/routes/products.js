@@ -1,95 +1,78 @@
+// routes/products.js
 const express = require("express");
 const router = express.Router();
-const mongoose = require("mongoose");
 const Product = require("../models/Product");
-const Group = require("../models/Group");
-const Subgroup = require("../models/Subgroup");
-const validateObjectId = require("../utils/validateObjectId");
 
 // GET /api/products
-router.get("/", async (req, res, next) => {
+router.get("/", async (req, res) => {
   try {
-    const { group, subgroup } = req.query;
+    const { page = 1, limit = 100, search, sort } = req.query;
     const filter = {};
 
-    if (group && validateObjectId(group)) filter.group = group;
-    if (subgroup && validateObjectId(subgroup)) filter.subgroup = subgroup;
+    if (req.query.group) filter.group = req.query.group;
+    if (req.query.subgroup) filter.subgroup = req.query.subgroup;
+    if (search) filter.name = { $regex: search, $options: "i" };
 
-    const products = await Product.find(filter)
-      .populate("group", "name")
-      .populate("subgroup", "name")
-      .lean()
-      .exec();
+    const reserved = new Set(["page", "limit", "search", "sort", "group", "subgroup"]);
+    Object.keys(req.query).forEach((key) => {
+      if (reserved.has(key)) return;
+      const raw = req.query[key];
+      if (raw.includes(",")) {
+        const vals = raw.split(",").map(v => v.trim()).filter(Boolean);
+        filter[`attributes.${key}`] = { $in: vals };
+      } else if (raw === "true" || raw === "false") {
+        filter[`attributes.${key}`] = raw === "true";
+      } else {
+        filter[`attributes.${key}`] = raw;
+      }
+    });
 
-    res.json(products);
-  } catch (err) { next(err); }
+    const skip = (Math.max(1, Number(page)) - 1) * Number(limit);
+    const query = Product.find(filter)
+      .populate("group", "name slug")
+      .populate("subgroup", "name slug")
+      .skip(skip)
+      .limit(Number(limit));
+
+    if (sort) query.sort(sort);
+
+    const [items, total] = await Promise.all([query.exec(), Product.countDocuments(filter)]);
+    res.json({ items, total, page: Number(page), limit: Number(limit) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // POST /api/products
-router.post("/", async (req, res, next) => {
+router.post("/", async (req, res) => {
   try {
-    const { name, price, group, subgroup, description, colors } = req.body;
-    if (!name) return res.status(400).json({ error: "name is required" });
-
-    const doc = { name, price, description, colors };
-
-    if (group && validateObjectId(group)) {
-      const grp = await Group.findById(group).lean();
-      if (!grp) return res.status(400).json({ error: "Group not found" });
-      doc.group = group;
-    }
-
-    if (subgroup && validateObjectId(subgroup)) {
-      const sub = await Subgroup.findById(subgroup).lean();
-      if (!sub) return res.status(400).json({ error: "Subgroup not found" });
-      doc.subgroup = subgroup;
-    }
-
-    const product = await Product.create(doc);
+    const product = new Product(req.body);
+    await product.save();
     res.status(201).json(product);
-  } catch (err) { next(err); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // PUT /api/products/:id
-router.put("/:id", async (req, res, next) => {
+router.put("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!validateObjectId(id)) return res.status(400).json({ error: "Invalid product id" });
-
-    const { name, price, group, subgroup, description, colors } = req.body;
-    const update = {};
-
-    if (name !== undefined) update.name = name;
-    if (price !== undefined) update.price = price;
-    if (description !== undefined) update.description = description;
-    if (colors !== undefined) update.colors = colors;
-
-    if (group !== undefined) {
-      if (group && !validateObjectId(group)) return res.status(400).json({ error: "Invalid group id" });
-      update.group = group || null;
-    }
-
-    if (subgroup !== undefined) {
-      if (subgroup && !validateObjectId(subgroup)) return res.status(400).json({ error: "Invalid subgroup id" });
-      update.subgroup = subgroup || null;
-    }
-
-    const updated = await Product.findByIdAndUpdate(id, update, { new: true }).lean().exec();
-    if (!updated) return res.status(404).json({ error: "Product not found" });
+    const updated = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: "Товар не найден" });
     res.json(updated);
-  } catch (err) { next(err); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// DELETE /api/products/:id
-router.delete("/:id", async (req, res, next) => {
+router.delete("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!validateObjectId(id)) return res.status(400).json({ error: "Invalid product id" });
-
-    const removed = await Product.findByIdAndDelete(id).lean().exec();
-    if (!removed) return res.status(404).json({ error: "Product not found" });
+    const removed = await Product.findByIdAndDelete(req.params.id);
+    if (!removed) return res.status(404).json({ error: "Товар не найден" });
     res.json({ ok: true });
-  } catch (err) { next(err); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;

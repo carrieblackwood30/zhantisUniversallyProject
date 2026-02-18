@@ -1,12 +1,6 @@
 // src/composables/aventos/hk.js
 import { hkKitEuro, checkLimits, calculateMechanismCount } from "./shared";
 
-/**
- * calculateHK(params)
- * params: { pf, widthMm, heightMm, thicknessMm, material, weightKg }
- *
- * Возвращает минимально необходимое количество силовиков (минимум 2) и массив артикулов.
- */
 export function calculateHK(params) {
   const pf = Number(params.pf);
   const width = Number(params.widthMm);
@@ -21,7 +15,6 @@ export function calculateHK(params) {
     return { outOfRange: true, message: `Некорректные входные данные для HK.` };
   }
 
-  // candidates: используем верхнюю границу диапазона как conservative kitCapacity
   const candidates = hkKitEuro
     .map(row => {
       const kitCapacity = Number(row.maxLF);
@@ -35,7 +28,6 @@ export function calculateHK(params) {
     return { outOfRange: true, message: `PF = ${pf.toFixed(2)} не попадает в диапазоны комплектов HK.` };
   }
 
-  // Выбираем кандидат с минимальным requiredCount; при равенстве — меньший kitCapacity
   candidates.sort((a, b) => {
     if (a.requiredCount !== b.requiredCount) return a.requiredCount - b.requiredCount;
     return a.kitCapacity - b.kitCapacity;

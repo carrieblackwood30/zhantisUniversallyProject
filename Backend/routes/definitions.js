@@ -1,37 +1,62 @@
+// routes/definitions.js
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 const AttributeDefinition = require("../models/AttributeDefinition");
-const validateObjectId = require("../utils/validateObjectId");
-const asyncHandler = require("../utils/asyncHandler");
-const { success, error } = require("../utils/responseHelper");
+const Subgroup = require("../models/Subgroup");
+const Group = require("../models/Group");
 
-// GET /api/attribute-definitions?group=...&subgroup=...
-router.get("/", asyncHandler(async (req, res) => {
-  const { group, subgroup } = req.query;
+router.put("/bulk", async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    const { attributes = [], subgroups = [], groups = [] } = req.body;
 
-  let attrs = [];
+    const results = { attributes: [], subgroups: [], groups: [] };
 
-  // 1) атрибуты подгруппы
-  if (subgroup && validateObjectId(subgroup)) {
-    attrs = await AttributeDefinition.find({ subgroup }).lean();
+    // Обновляем/создаём атрибуты
+    for (const a of attributes) {
+      if (a._id) {
+        const updated = await AttributeDefinition.findByIdAndUpdate(a._id, a, { new: true, session });
+        results.attributes.push(updated);
+      } else {
+        const created = await AttributeDefinition.create([a], { session });
+        results.attributes.push(created[0]);
+      }
+    }
+
+    // Обновляем/создаём подгруппы
+    for (const s of subgroups) {
+      if (s._id) {
+        const updated = await Subgroup.findByIdAndUpdate(s._id, s, { new: true, session });
+        results.subgroups.push(updated);
+      } else {
+        const created = await Subgroup.create([s], { session });
+        results.subgroups.push(created[0]);
+      }
+    }
+
+    // Аналогично для групп (если нужно)
+    for (const g of groups) {
+      if (g._id) {
+        const updated = await Group.findByIdAndUpdate(g._id, g, { new: true, session });
+        results.groups.push(updated);
+      } else {
+        const created = await Group.create([g], { session });
+        results.groups.push(created[0]);
+      }
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.json({ success: true, results });
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("bulk definitions error", err);
+    res.status(500).json({ error: "Ошибка bulk сохранения" });
   }
-
-  // 2) атрибуты группы (без дубликатов)
-  if (group && validateObjectId(group)) {
-    const groupAttrs = await AttributeDefinition.find({ group }).lean();
-    const existingKeys = new Set(attrs.map(a => a.key));
-    for (const a of groupAttrs) if (!existingKeys.has(a.key)) attrs.push(a);
-  }
-
-  // 3) глобальные атрибуты
-  const globalAttrs = await AttributeDefinition.find({ group: null, subgroup: null }).lean();
-  const existingKeys = new Set(attrs.map(a => a.key));
-  for (const a of globalAttrs) if (!existingKeys.has(a.key)) attrs.push(a);
-
-  // сортировка
-  attrs.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-  return success(res, attrs);
-}));
+});
 
 module.exports = router;

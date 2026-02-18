@@ -5,11 +5,6 @@ export const materials = {
   "ЛДСП": 650
 };
 
-/**
- * Рассчитать вес фасада в кг.
- * widthMm, heightMm, thicknessMm — в мм.
- * materialKey — ключ из materials.
- */
 export function calcWeightKg(widthMm, heightMm, thicknessMm, materialKey) {
   const density = materials[materialKey] ?? 700; // kg/m3
   const w = Number(widthMm) / 1000;

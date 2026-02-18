@@ -1,55 +1,107 @@
+// routes/auth.js
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
-const asyncHandler = require("../utils/asyncHandler");
-const { success, error } = require("../utils/responseHelper");
 
-// POST /api/auth/register
-router.post("/register", asyncHandler(async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!name || !email || !password) return error(res, "All fields are required");
+const JWT_SECRET = process.env.JWT_SECRET || "please_set_a_real_secret_in_env";
 
-  const existing = await User.findOne({ email }).lean();
-  if (existing) return error(res, "Email already registered");
+// Вспомог: генерация токенов
+function createTokens(user) {
+  const payload = { id: user._id, role: user.role };
+  const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "15m" });
+  const refreshToken = jwt.sign(payload, JWT_SECRET, { expiresIn: "30d" });
+  return { accessToken, refreshToken };
+}
 
-  const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashed });
-
-  return success(res, { id: user._id, email: user.email }, 201);
-}));
-
-// POST /api/auth/login
-router.post("/login", asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) return error(res, "Email and password required");
-
-  const user = await User.findOne({ email });
-  if (!user) return error(res, "Invalid credentials", 401);
-
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) return error(res, "Invalid credentials", 401);
-
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
-  return success(res, { token, user: { id: user._id, name: user.name, email: user.email } });
-}));
-
-// GET /api/auth/me
-router.get("/me", asyncHandler(async (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader) return error(res, "No token provided", 401);
-
-  const token = authHeader.split(" ")[1];
+// Регистрация
+router.post("/register", async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id).lean();
-    if (!user) return error(res, "User not found", 404);
+    const { name, username, email, password } = req.body;
 
-    return success(res, { id: user._id, name: user.name, email: user.email });
+    // обязательные поля: email + password
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email и пароль обязательны" });
+    }
+
+    // создаём пользователя (Mongoose проверит уникальность)
+    const user = new User({ name, username, email, password });
+
+    try {
+      await user.save();
+    } catch (saveErr) {
+      // обработка ошибок уникальности (duplicate key)
+      if (saveErr && saveErr.code === 11000) {
+        // выясняем, какое поле вызвало конфликт
+        const dupField = Object.keys(saveErr.keyPattern || {})[0] || "email";
+        return res.status(409).json({ error: dupField === "email" ? "Такой email уже существует" : "Такой username уже существует" });
+      }
+      throw saveErr;
+    }
+
+    const { accessToken, refreshToken } = createTokens(user);
+
+    res.status(201).json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      accessToken,
+      refreshToken,
+    });
   } catch (err) {
-    return error(res, "Invalid token", 401);
+    console.error("Ошибка регистрации:", err);
+    res.status(500).json({ error: "Ошибка сервера при регистрации" });
   }
-}));
+});
+
+// Логин
+router.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ error: "Email и пароль обязательны" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(401).json({ error: "Пользователь не найден" });
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) return res.status(401).json({ error: "Неверный пароль" });
+
+    const { accessToken, refreshToken } = createTokens(user);
+
+    res.json({
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+      accessToken,
+      refreshToken,
+    });
+  } catch (err) {
+    console.error("Ошибка входа:", err);
+    res.status(500).json({ error: "Ошибка сервера при входе" });
+  }
+});
+
+// Обновление accessToken
+router.post("/refresh", (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(401).json({ error: "Refresh token required" });
+
+  try {
+    const decoded = jwt.verify(refreshToken, JWT_SECRET);
+    const newAccessToken = jwt.sign({ id: decoded.id, role: decoded.role }, JWT_SECRET, { expiresIn: "15m" });
+    res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    console.error("Ошибка обновления токена:", err);
+    res.status(403).json({ error: "Неверный refresh token" });
+  }
+});
 
 module.exports = router;

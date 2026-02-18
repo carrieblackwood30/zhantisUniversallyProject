@@ -69,7 +69,7 @@ export function useAventosCalculator() {
       if (typeof calcRes.requiredCount === "number") calcRes.requiredLevers = calcRes.requiredCount;
       else if (Array.isArray(calcRes.leversArticles)) calcRes.requiredLevers = calcRes.leversArticles.length;
       else if (Array.isArray(calcRes.levers)) calcRes.requiredLevers = calcRes.levers.length;
-      else calcRes.requiredLevers = calcRes.mechanismCount ?? 1;
+      else calcRes.requiredLevers = calcRes.mechanismCount ?? 2;
     }
     if (calcRes.requiredCount === undefined) calcRes.requiredCount = calcRes.mechanismCount ?? calcRes.requiredLevers;
 

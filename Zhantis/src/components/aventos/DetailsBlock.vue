@@ -42,7 +42,7 @@
       <div class="flex justify-between border-b pb-1">
         <span class="text-gray-600">Силовых механизмов</span>
         <span>
-          {{ result.mechanismCount }} × {{ result.mechanismArticles?.[0] ?? result.mechanism?.article ?? '-' }}
+          {{ result.mechanismCount + 1 }} × {{ result.mechanismArticles?.[0] ?? result.mechanism?.article ?? '-' }}
         </span>
       </div>
       <div v-if="result.mechanismArticles?.length > 1" class="flex justify-between border-b pb-1">
