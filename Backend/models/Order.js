@@ -4,14 +4,20 @@ const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: "Product", required: true },
   quantity: { type: Number, default: 1 },
   price: { type: Number, required: true },
-  color: { type: String } // выбранный цвет, если есть
+  color: { type: String }
 });
 
 const orderSchema = new mongoose.Schema({
-  customer: { type: mongoose.Schema.Types.ObjectId, ref: "Customer" },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // связь с пользователем
+  customer: {
+    name: { type: String, required: true },
+    phone: { type: String, required: true },
+    address: { type: String, required: true }
+  },
   items: [orderItemSchema],
   total: { type: Number, required: true },
-  status: { type: String, default: "pending" }
+  status: { type: String, default: "pending" },
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model("Order", orderSchema);
