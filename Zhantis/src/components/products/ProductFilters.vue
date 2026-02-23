@@ -92,16 +92,25 @@ async function loadSubgroups(params = {}) {
   }
 }
 
-onMounted(async () => {
-  await loadGroups();
-  await loadSubgroups();
+async function loadAttributes() {
   try {
-    const res = await api.get("/attributes");
+    const params = {};
+    if (local.value.group) params.group = local.value.group;
+    if (local.value.subgroup) params.subgroup = local.value.subgroup;
+    if (!local.value.group && !local.value.subgroup) params.global = "true";
+
+    const res = await api.get("/attributes", { params });
     attributes.value = res.data || [];
   } catch (err) {
     console.error("Ошибка загрузки атрибутов", err);
     attributes.value = [];
   }
+}
+
+onMounted(async () => {
+  await loadGroups();
+  await loadSubgroups();
+  await loadAttributes();
 });
 
 const filteredSubgroups = computed(() => {
@@ -122,22 +131,22 @@ const onAnyChange = () => {
   applyFilters();
 };
 
-const onGroupChange = async () => {
+const onGroupChange = () => {
   local.value.subgroup = null;
-  await loadSubgroups(local.value.group ? { parentGroup: local.value.group } : {});
+  local.value.attributes.extension = null;
   applyFilters();
 };
 
 const applyFilters = () => {
-  store.clearFilters();
+  store.filters = {};
 
-  if (local.value.group) store.setFilter("group", local.value.group);
-  if (local.value.subgroup) store.setFilter("subgroup", local.value.subgroup);
+  if (local.value.group) store.filters.group = local.value.group;
+  if (local.value.subgroup) store.filters.subgroup = local.value.subgroup;
 
   Object.keys(local.value.attributes || {}).forEach(k => {
     const v = local.value.attributes[k];
     if (v !== null && v !== undefined && v !== "") {
-      store.setFilter(k, v);
+      store.filters[k] = v;
     }
   });
 

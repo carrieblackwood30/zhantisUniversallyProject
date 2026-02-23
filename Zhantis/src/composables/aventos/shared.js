@@ -58,7 +58,7 @@ export const hfKitLF = {
     kit: 13500, // единицы PF (kg·mm)
     article: "22F2510",
     name: "HF top 25N",
-    leverArticles: { "35": "22F3800", "39": "22F3900" }
+    leverArticles: { "35": "22F3500", "39": "22F3900" }
   },
   "HF-28": {
     kit: 19300,

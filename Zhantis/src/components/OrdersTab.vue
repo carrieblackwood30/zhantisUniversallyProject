@@ -8,6 +8,7 @@
           <th class="border p-2">Покупатель</th>
           <th class="border p-2">Товары</th>
           <th class="border p-2">Статус</th>
+          <th class="border p-2">Действия</th>
         </tr>
       </thead>
       <tbody>
@@ -23,12 +24,22 @@
           </td>
           <td class="border p-2">
             <ul>
-              <li v-for="item in order.items" :key="item.productId">
-                {{ item.name }} (x{{ item.quantity }})
+              <li v-for="item in order.items" :key="item._id">
+                {{ item.product.name }} (x{{ item.quantity }}) — {{ item.price.toLocaleString() }} ₸
               </li>
             </ul>
           </td>
-          <td class="border p-2">{{ order.status || "В обработке" }}</td>
+          <td class="border p-2">{{ stageLabel(order.status) }}</td>
+          <td class="border p-2 text-center">
+            <button
+              v-if="nextStage(order.status)"
+              @click="advanceStage(order)"
+              class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            >
+              Перевести в "{{ stageLabel(nextStage(order.status)) }}"
+            </button>
+            <span v-else class="text-green-600 font-semibold">Завершено</span>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -40,6 +51,26 @@ import { onMounted } from "vue";
 import { useOrdersStore } from "@/stores/orders";
 
 const ordersStore = useOrdersStore();
+
+// Стадии заказа
+const stages = ["обработка", "согласование", "отгрузка", "доставка", "товар получен"];
+
+const stageLabel = (status) => {
+  if (!status) return "обработка";
+  return status;
+};
+
+const nextStage = (status) => {
+  const idx = stages.indexOf(status);
+  if (idx === -1) return stages[0];
+  return stages[idx + 1] || null;
+};
+
+const advanceStage = async (order) => {
+  const newStatus = nextStage(order.status);
+  if (!newStatus) return;
+  await ordersStore.updateOrderStatus(order._id, newStatus);
+};
 
 onMounted(async () => {
   await ordersStore.fetchOrdersAdmin(); // для админки

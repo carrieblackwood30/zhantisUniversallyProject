@@ -23,47 +23,59 @@
     </div>
 
     <!-- динамические атрибуты -->
-    <div v-if="attributesList.length" class="mt-4">
-      <h3 class="font-medium mb-2">Параметры подгруппы</h3>
-      <div v-for="attr in attributesList" :key="attr._id || attr.key" class="mb-3">
-        <label class="block mb-1">{{ attr.label }}</label>
+<div v-if="attributesList.length || isHiddenMountSelected" class="mt-4">
+  <h3 class="font-medium mb-2">Параметры подгруппы</h3>
 
-        <div v-if="attr.type === 'enum'">
-          <div class="flex gap-2 flex-wrap mb-2">
-            <button
-              v-for="opt in attr.values"
-              :key="opt.value"
-              type="button"
-              @click="setDynamic(attr.key, opt.value)"
-              :class="{'ring-2 ring-blue-400': dynamic[attr.key] === opt.value}"
-              class="px-2 py-1 border rounded flex items-center gap-2"
-            >
-              <span v-if="opt.meta?.hex" :style="{background: opt.meta.hex}" class="w-4 h-4 rounded-sm inline-block"></span>
-              <span>{{ opt.label }}</span>
-            </button>
-          </div>
+  <!-- обычные атрибуты -->
+  <div v-for="attr in attributesList" :key="attr._id || attr.key" class="mb-3">
+    <label class="block mb-1">{{ attr.label }}</label>
 
-          <div class="flex gap-2 items-center">
-            <input v-model="newOption[attr.key]" placeholder="Добавить опцию" class="border p-2 flex-1" />
-            <button @click="addLocalOption(attr)" class="bg-blue-500 text-white px-3 py-1 rounded">Добавить</button>
-            <button @click="openAttributeManager(attr)" class="bg-gray-200 px-3 py-1 rounded">Редактировать опции</button>
-          </div>
-        </div>
+    <div v-if="attr.type === 'enum'">
+      <div class="flex gap-2 flex-wrap mb-2">
+        <button
+          v-for="opt in attr.values"
+          :key="opt.value"
+          type="button"
+          @click="setDynamic(attr.key, opt.value)"
+          :class="{'ring-2 ring-blue-400': dynamic[attr.key] === opt.value}"
+          class="px-2 py-1 border rounded flex items-center gap-2"
+        >
+          <span v-if="opt.meta?.hex" :style="{background: opt.meta.hex}" class="w-4 h-4 rounded-sm inline-block"></span>
+          <span>{{ opt.label }}</span>
+        </button>
+      </div>
 
-        <div v-else-if="attr.type === 'number'">
-          <input type="number" :min="attr.min" :max="attr.max" v-model.number="dynamic[attr.key]" class="border p-2 w-full" />
-          <div class="text-sm text-gray-500">{{ attr.min ?? '' }} — {{ attr.max ?? '' }} {{ attr.unit ?? '' }}</div>
-        </div>
-
-        <div v-else-if="attr.type === 'boolean'">
-          <input type="checkbox" v-model="dynamic[attr.key]" />
-        </div>
-
-        <div v-else>
-          <input type="text" v-model="dynamic[attr.key]" class="border p-2 w-full" />
-        </div>
+      <div class="flex gap-2 items-center">
+        <input v-model="newOption[attr.key]" placeholder="Добавить опцию" class="border p-2 flex-1" />
+        <button @click="addLocalOption(attr)" class="bg-blue-500 text-white px-3 py-1 rounded">Добавить</button>
+        <button @click="openAttributeManager(attr)" class="bg-gray-200 px-3 py-1 rounded">Редактировать опции</button>
       </div>
     </div>
+
+    <div v-else-if="attr.type === 'number'">
+      <input type="number" :min="attr.min" :max="attr.max" v-model.number="dynamic[attr.key]" class="border p-2 w-full" />
+      <div class="text-sm text-gray-500">{{ attr.min ?? '' }} — {{ attr.max ?? '' }} {{ attr.unit ?? '' }}</div>
+    </div>
+
+    <div v-else-if="attr.type === 'boolean'">
+      <input type="checkbox" v-model="dynamic[attr.key]" />
+    </div>
+
+    <div v-else>
+      <input type="text" v-model="dynamic[attr.key]" class="border p-2 w-full" />
+    </div>
+  </div>
+
+  <!-- дополнительный пункт для скрытого монтажа -->
+  <div v-if="isHiddenMountSelected" class="mb-3">
+    <label class="block mb-1">Тип выдвижения</label>
+    <select v-model="form.attributes.extension" class="border p-2 w-full">
+      <option value="полное">полного</option>
+      <option value="частичное">частичного</option>
+    </select>
+  </div>
+
+</div>
 
     <div class="mt-3">
       <label class="block mb-1">Описание</label>
