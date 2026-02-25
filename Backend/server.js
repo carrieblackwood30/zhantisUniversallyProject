@@ -11,7 +11,7 @@ const compression = require("compression");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
+const origins = (CORS_ORIGIN || "").split(","); app.use(cors({ origin: origins, credentials: true }));
 
 app.use(cors({ origin: CORS_ORIGIN }));
 app.use(express.json({ limit: "10mb" }));
