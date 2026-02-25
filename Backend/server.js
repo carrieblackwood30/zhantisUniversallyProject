@@ -11,10 +11,20 @@ const compression = require("compression");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
-const CORS_ORIGIN = process.env.CORS_ORIGIN || "*";
-const origins = CORS_ORIGIN.split(",").map(o => o.trim()).filter(Boolean);  
+const CORS_ORIGIN = process.env.CORS_ORIGIN || ""; 
+const origins = CORS_ORIGIN.split(",").map(o => o.trim()).filter(Boolean);
 
-app.use(cors({ origin: origins, credentials: true }));
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || origins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}));
+
 app.use(express.json({ limit: "10mb" }));
 app.use(morgan("dev"));
 app.use(compression());
