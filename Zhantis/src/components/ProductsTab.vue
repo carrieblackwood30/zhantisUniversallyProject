@@ -36,6 +36,7 @@
             />
             <input v-else type="file" @change="handleEditFile($event, product._id)" />
           </td>
+          {{ console.log(product.image) }}
 
           <td class="border p-2">
             <span v-if="!isEditing(product._id)">{{ product.name }}</span>

@@ -84,7 +84,7 @@ const productsList = computed(() => {
 // выбранные цвета по id товара
 const selectedColors = ref({});
 
-const getImageUrl = (path) => (!path ? "/no-image.png" : `https://zhantisuniversallyproject.onrender.com${path}`);
+const getImageUrl = (path) => (!path ? "/no-image.png" : `hhttps://zhantisuniversallyproject.onrender.com${path}`);
 const formatPrice = (value) => {
   try {
     return new Intl.NumberFormat("ru-RU").format(Number(value || 0));
