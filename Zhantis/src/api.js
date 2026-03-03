@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/stores/auth";
 
 const api = axios.create({
-  baseURL: "https://zhantisuniversallyproject.onrender.com",
+  baseURL: "https://zhantisuniversallyproject.onrender.com/api",
 });
 
 // Добавляем токен в каждый запрос
