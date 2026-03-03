@@ -1,7 +1,7 @@
 <template>
   <div v-if="show" class="fixed inset-0 z-50 flex items-center justify-center">
     <div class="absolute inset-0 bg-black/50" @click="close"></div>
-    <div class="relative bg-white rounded-lg w-full max-w-3xl mx-4 shadow-lg overflow-hidden">
+    <div class="relative bg-white rounded-lg w-full max-w-3xl mx-4 shadow-lg max-h-[90vh] overflow-scroll">
       <header class="flex items-center justify-between p-4 border-b">
         <h3 class="text-lg font-semibold">Калькулятор AVENTOS</h3>
         <button @click="close" class="text-gray-600 hover:text-gray-900">✕</button>

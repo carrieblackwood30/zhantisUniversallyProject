@@ -64,7 +64,7 @@ export const hfKitLF = {
     kit: 19300,
     article: "22F2810",
     name: "HF top 28N",
-    leverArticles: { "35": "22F3900", "39": "22F3900" }
+    leverArticles: { "35": "22F3500", "39": "22F3900" }
   }
 };
 

@@ -177,7 +177,7 @@ const deleteProduct = async (id) => {
   await productsStore.deleteProduct(id);
 };
 
-const getImageUrl = (path) => (!path ? "/no-image.png" : `http://localhost:3000${path}`);
+const getImageUrl = (path) => (!path ? "/no-image.png" : `https://zhantisuniversallyproject.onrender.com${path}`);
 const formatPrice = (v) => new Intl.NumberFormat("ru-RU").format(v);
 
 const onSaved = async () => {
