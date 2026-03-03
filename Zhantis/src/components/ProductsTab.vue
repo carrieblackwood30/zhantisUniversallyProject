@@ -36,7 +36,6 @@
             />
             <input v-else type="file" @change="handleEditFile($event, product._id)" />
           </td>
-          {{ console.log(product.image) }}
 
           <td class="border p-2">
             <span v-if="!isEditing(product._id)">{{ product.name }}</span>
@@ -178,7 +177,7 @@ const deleteProduct = async (id) => {
   await productsStore.deleteProduct(id);
 };
 
-const getImageUrl = (path) => (!path ? "/no-image.png" : `https://zhantisuniversallyproject.onrender.com${path}`);
+const getImageUrl = (path) => (!path ? "/no-image.png" : `http://localhost:3000${path}`);
 const formatPrice = (v) => new Intl.NumberFormat("ru-RU").format(v);
 
 const onSaved = async () => {
