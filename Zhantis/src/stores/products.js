@@ -21,6 +21,11 @@ export const useProductsStore = defineStore("products", {
         if (state.filters.group && String(p.group?._id || p.group) !== String(state.filters.group)) return false;
         if (state.filters.subgroup && String(p.subgroup?._id || p.subgroup) !== String(state.filters.subgroup)) return false;
 
+        if (state.filters.search) {
+          const search = state.filters.search.toLowerCase();
+          if (!p.name?.toLowerCase().includes(search)) return false;
+        }
+
         if (state.filters.extension) {
           const ext = p.attributes?.extension ?? (p.dynamicAttributes && p.dynamicAttributes.extension);
           if (state.filters.extension === "фиксаторы") {
@@ -29,7 +34,7 @@ export const useProductsStore = defineStore("products", {
         }
 
         for (const [key, val] of Object.entries(state.filters)) {
-          if (["group", "subgroup", "extension"].includes(key)) continue;
+          if (["group", "subgroup", "extension", "search"].includes(key)) continue;
           const productVal = p.attributes?.[key] ?? (p.dynamicAttributes && p.dynamicAttributes[key]);
           if (val && productVal !== val) return false;
         }
@@ -46,17 +51,28 @@ export const useProductsStore = defineStore("products", {
 
     // PRODUCTS
     async fetchProducts() {
-      this.loading = true; this.error = null;
+      this.loading = true;
+      this.error = null;
       try {
         const res = await api.get("/products");
         const payload = res.data;
         let items = [];
-        if (Array.isArray(payload)) { items = payload; this.total = items.length; }
-        else if (payload && Array.isArray(payload.items)) { items = payload.items; this.total = payload.total || items.length; }
-        else { items = []; this.total = 0; }
+        if (Array.isArray(payload)) {
+          items = payload;
+          this.total = items.length;
+        } else if (payload && Array.isArray(payload.items)) {
+          items = payload.items;
+          this.total = payload.total || items.length;
+        } else {
+          items = [];
+          this.total = 0;
+        }
         this.products = items;
-      } catch (err) { this.handleError(err, "Ошибка загрузки товаров"); }
-      finally { this.loading = false; }
+      } catch (err) {
+        this.handleError(err, "Ошибка загрузки товаров");
+      } finally {
+        this.loading = false;
+      }
     },
 
     async addProduct(product) {

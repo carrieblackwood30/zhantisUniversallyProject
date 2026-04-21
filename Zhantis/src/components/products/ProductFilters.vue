@@ -19,6 +19,16 @@
         </select>
       </div>
 
+      <div>
+        <label class="block text-sm text-gray-600 mb-1">Поиск:</label>
+        <input
+          v-model="local.search"
+          @input="onAnyChange"
+          class="border p-2 w-full"
+          placeholder="Введите текст для поиска..."
+        />
+      </div>
+
       <!-- Тип выдвижения (только для группы "Направляющие скрытого монтажа") -->
       <div v-if="isHiddenMountGroupSelected">
         <label class="block text-sm text-gray-600 mb-1">Тип выдвижения</label>
@@ -67,6 +77,7 @@ const attributes = ref([]);
 const local = ref({
   group: null,
   subgroup: null,
+  search: null,
   attributes: {
     extension: null,
   },
@@ -137,11 +148,23 @@ const onGroupChange = () => {
   applyFilters();
 };
 
+const onSearchInput = () => {
+  if (local.value.search && local.value.search.trim() !== "") {
+    store.filters.search = local.value.search.trim();
+
+    console.log(store.filters.search);
+  } else {
+    delete store.filters.search;
+  }
+};
+
 const applyFilters = () => {
   store.filters = {};
 
   if (local.value.group) store.filters.group = local.value.group;
   if (local.value.subgroup) store.filters.subgroup = local.value.subgroup;
+
+  onSearchInput();
 
   Object.keys(local.value.attributes || {}).forEach(k => {
     const v = local.value.attributes[k];
