@@ -85,6 +85,7 @@ export const useCartStore = defineStore("cart", {
           name: product.name,
           price: Number(product.price), // всегда число
           image: product.image,
+          color: product.selectedColor || product.colors[0] || null,
           attributes: product.attributes || {},
           quantity: 1,
         });

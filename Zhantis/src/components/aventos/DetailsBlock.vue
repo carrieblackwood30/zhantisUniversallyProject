@@ -37,6 +37,18 @@
       </div>
     </template>
 
+    <!-- HK-XS -->
+    <template v-else-if="result.typeKey === 'HK_xs'">
+      <div class="flex justify-between border-b pb-1">
+        <span class="text-gray-600">Силовые элементы</span>
+        <span>
+          <span v-for="opt in result.options" :key="opt.size" class="block ">
+            {{ opt.count }} × {{ opt.size }} ({{ opt.article }})
+          </span>
+        </span>
+      </div>
+    </template>
+
     <!-- HS / HL / HK -->
     <template v-else-if="['HS_top','HL_top','HK_top'].includes(result.typeKey)">
       <div class="flex justify-between border-b pb-1">

@@ -48,6 +48,13 @@
                 <option v-for="(d, key) in materials" :key="key" :value="key">{{ key }}</option>
               </select>
             </label>
+            <label v-if="selectedType === 'HK_xs'" class="block">
+              <div class="text-xs text-gray-600">Тип HK-XS</div>
+              <select v-model="hkXsSubType" class="border p-2 rounded w-full">
+                <option value="BLUMOTION">BLUMOTION</option>
+                <option value="TIPON">TIP-ON</option>
+              </select>
+            </label>
           </div>
 
           <div class="mt-3 flex gap-2">
@@ -103,6 +110,7 @@ const {
   calculate,
   reset,
   selectType,
+  hkXsSubType
 } = useAventosCalculator();
 
 watch(show, (v) => emit("update:show", v));
@@ -159,4 +167,6 @@ function copySpec() {
     alert("Спецификация и рекомендация скопированы в буфер обмена");
   });
 }
+
+console.log(hkXsSubType.value);
 </script>

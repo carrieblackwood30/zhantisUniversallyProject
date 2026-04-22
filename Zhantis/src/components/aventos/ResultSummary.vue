@@ -5,6 +5,9 @@
         <div class="text-xs text-gray-500">Механизм</div>
         <div class="font-semibold text-sm">
           {{ result.mechanism?.code }} — {{ result.mechanism?.article }}
+              <span v-if="result.typeKey === 'HK_xs' && result.mechanismCount > 1" class="text-red-600">
+                силовиков нужно ×{{ result.mechanismCount }}
+              </span>
         </div>
       </div>
 

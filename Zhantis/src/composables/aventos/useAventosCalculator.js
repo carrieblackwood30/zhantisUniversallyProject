@@ -5,13 +5,15 @@ import { calculateHS } from "./hs";
 import { calculateHF } from "./hf";
 import { calculateHL } from "./hl";
 import { calculateHK } from "./hk";
+import { calculateHKXS } from "./hk_xs";
 
 export function useAventosCalculator() {
   const types = [
     { key: "HF_top", label: "AVENTOS HF top" },
     { key: "HS_top", label: "AVENTOS HS top" },
     { key: "HL_top", label: "AVENTOS HL top" },
-    { key: "HK_top", label: "AVENTOS HK top" }
+    { key: "HK_top", label: "AVENTOS HK top" },
+    { key: "HK_xs", label: "AVENTOS HK-XS" }
   ];
 
   const materials = { "МДФ": 700, "ЛДСП": 650 };
@@ -23,6 +25,8 @@ export function useAventosCalculator() {
   const material = ref("МДФ");
 
   const result = ref(null);
+  const hkXsSubType = ref("BLUMOTION");
+  
 
   function selectType(key) {
     selectedType.value = key;
@@ -167,7 +171,8 @@ export function useAventosCalculator() {
       heightMm: effHeight,
       thicknessMm: t,
       material: mat,
-      weightKg
+      weightKg,
+      subType: hkXsSubType.value || "BLUMOTION",
     };
 
     let calcRes = null;
@@ -178,6 +183,8 @@ export function useAventosCalculator() {
         calcRes = calculateHL(params);
       } else if (selectedType.value === "HK_top") {
         calcRes = calculateHK(params);
+      } else if (selectedType.value === "HK_xs") {
+          calcRes = calculateHKXS(params)
       } else {
         calcRes = calculateHF(params);
       }
@@ -226,6 +233,7 @@ export function useAventosCalculator() {
     result,
     calculate,
     reset,
-    selectType
+    selectType,
+    hkXsSubType
   };
 }

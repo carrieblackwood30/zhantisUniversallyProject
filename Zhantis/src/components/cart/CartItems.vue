@@ -20,6 +20,7 @@
             <div v-if="item.attributes" class="text-xs text-gray-500 mt-1">
               <span v-if="item.attributes.extension">Тип выдвижения: {{ item.attributes.extension }}</span>
               <span v-if="item.attributes.fixation"> | Фиксация: {{ item.attributes.fixation ? "Да" : "Нет" }}</span>
+              <span v-if="item.color"> Цвет: {{ item.color }}</span>
               <span v-if="item.attributes.drawerType"> | Система: {{ item.attributes.drawerType }}</span>
             </div>
           </td>
